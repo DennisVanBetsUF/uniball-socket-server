@@ -5,24 +5,55 @@ var kafka = require('kafka-node'),
     Consumer = kafka.Consumer;
 
 
-const client = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
-var scoreConsumer = new Consumer(
-    client,
-    [
-        { topic: 'score', partition: 0 }
-    ],
-    {
-        autoCommit: false
-    }
+const removeUserFromLobbyClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
+const joinLobbyClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
+// var scoreConsumer = new Consumer(
+//     client,
+//     [{ topic: 'score', partition: 0 }],
+//     {autoCommit: false}
+// );
+//
+// scoreConsumer.on('ready', function () {
+//     console.log('Score consumer ready');
+// });
+//
+// scoreConsumer.on('message', function (message) {
+//     io.emit('score', {team: message});
+// });
+
+var removeUserFromLobbyConsumer = new Consumer(
+    removeUserFromLobbyClient,
+    [{ topic: 'remove-user-from-lobby', partition: 0 }],
+    {autoCommit: true}
 );
 
-scoreConsumer.on('message', function (message) {
-    io.emit('score', {team: message});
+removeUserFromLobbyConsumer.on('message', function (message) {
+    console.log('removing user from lobby:', message);
+    io.emit('remove-user-from-lobby', message);
+});
+
+var joinLobbyConsumer = new Consumer(
+    joinLobbyClient,
+    [{ topic: 'join-lobby', partition: 0 }],
+    {autoCommit: true}
+);
+
+joinLobbyConsumer.on('message', function (message) {
+    console.log('joining lobby:', message);
+    io.emit('join-lobby', message);
+});
+
+joinLobbyConsumer.on('error', function (err) {
+    console.log('Score consumer error: ', err);
 });
 
 
 io.on('connection', function(socket){
     console.log('Socket connected');
+});
+
+app.get('/', function(req, res){
+    res.send('<h1>Message server</h1>');
 });
 
 http.listen(9001, function(){
