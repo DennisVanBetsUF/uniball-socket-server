@@ -50,6 +50,13 @@ joinLobbyConsumer.on('error', function (err) {
 
 io.on('connection', function(socket){
     console.log('Socket connected');
+    socket.on('user-selected-team', data => {
+        console.log('selected team', data);
+        socket.broadcast.emit('user-selected-team-broadcast', data);
+    });
+    socket.on('user-selected-role', data => {
+        socket.broadcast.emit('user-selected-role-broadcast', data);
+    });
 });
 
 app.get('/', function(req, res){
