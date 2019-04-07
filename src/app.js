@@ -7,6 +7,7 @@ var kafka = require('kafka-node'),
 
 const removeUserFromLobbyClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
 const joinLobbyClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
+const startGameClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
 // var scoreConsumer = new Consumer(
 //     client,
 //     [{ topic: 'score', partition: 0 }],
@@ -28,9 +29,10 @@ var removeUserFromLobbyConsumer = new Consumer(
 );
 
 removeUserFromLobbyConsumer.on('message', function (message) {
-    console.log('removing user from lobby:', message);
-    io.emit('remove-user-from-lobby', message);
+    io.emit('remove-user-from-lobby', JSON.parse(message.value));
 });
+
+
 
 var joinLobbyConsumer = new Consumer(
     joinLobbyClient,
@@ -39,24 +41,38 @@ var joinLobbyConsumer = new Consumer(
 );
 
 joinLobbyConsumer.on('message', function (message) {
-    console.log('joining lobby:', message);
-    io.emit('join-lobby', message);
+    io.emit('join-lobby', JSON.parse(message.value));
 });
 
-joinLobbyConsumer.on('error', function (err) {
-    console.log('Score consumer error: ', err);
-});
+var startGameConsumer = new Consumer(
+    startGameClient,
+    [{topic: 'start-game-lobby', partition: 0}],
+    {autoCommit: true}
+);
 
+startGameConsumer.on('message', function (message) {
+    console.log(message);
+   io.emit('start-game-lobby', JSON.parse(message.value));
+});
 
 io.on('connection', function(socket){
-    console.log('Socket connected');
     socket.on('user-selected-team', data => {
-        console.log('selected team', data);
         socket.broadcast.emit('user-selected-team-broadcast', data);
     });
     socket.on('user-selected-role', data => {
         socket.broadcast.emit('user-selected-role-broadcast', data);
     });
+    socket.on('reset-team-selector-of-users', data => {
+        socket.broadcast.emit('reset-team-selector-of-users-broadcast', data);
+    });
+    socket.on('assign-team-to-users', data => {
+        socket.broadcast.emit('assign-team-to-users-broadcast', data);
+    });
+});
+
+
+joinLobbyConsumer.on('error', function (err) {
+    console.log('Score consumer error: ', err);
 });
 
 app.get('/', function(req, res){
