@@ -8,6 +8,7 @@ var kafka = require('kafka-node'),
 const removeUserFromLobbyClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
 const joinLobbyClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
 const startGameClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
+const teamCreatedClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
 // var scoreConsumer = new Consumer(
 //     client,
 //     [{ topic: 'score', partition: 0 }],
@@ -21,6 +22,17 @@ const startGameClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'})
 // scoreConsumer.on('message', function (message) {
 //     io.emit('score', {team: message});
 // });
+
+var teamCreatedConsumer = new Consumer(
+    teamCreatedClient,
+    [{ topic: 'team-created', partition: 0 }],
+    {autoCommit: true}
+);
+
+teamCreatedConsumer.on('message', function(message) {
+    console.log(message);
+   io.emit('team-created', JSON.parse(message.value));
+});
 
 var removeUserFromLobbyConsumer = new Consumer(
     removeUserFromLobbyClient,
