@@ -4,13 +4,18 @@ const io = require('socket.io')(http);
 var kafka = require('kafka-node'),
     Consumer = kafka.Consumer;
 
+let kafkaUrl = '192.168.0.144:9092';
+if (process.argv[2] === 'prod') {
+    kafkaUrl = 'kafka:9092';
+}
 
-const removeUserFromLobbyClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
-const joinLobbyClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
-const startGameClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
-const teamCreatedClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
-const scoreClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
-const scoreEventClient = new kafka.KafkaClient({kafkaHost: '192.168.0.144:9092'});
+
+const removeUserFromLobbyClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
+const joinLobbyClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
+const startGameClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
+const teamCreatedClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
+const scoreClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
+const scoreEventClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
 
 var scoreEventConsumer = new Consumer(
     scoreEventClient,

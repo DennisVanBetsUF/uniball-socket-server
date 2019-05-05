@@ -5,5 +5,5 @@ COPY . /home/node
 WORKDIR /home/node
 
 RUN npm install
-CMD ["node", "src/app.js"]
+CMD ["node", "src/app.js", "prod"]
 EXPOSE 9001:9001
