@@ -6,7 +6,7 @@ var kafka = require('kafka-node'),
 
 let kafkaUrl = '192.168.0.144:9092';
 if (process.argv[2] === 'prod') {
-    kafkaUrl = 'kafka:9092';
+    kafkaUrl = 'http://kafka:9092';
 }
 
 
