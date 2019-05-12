@@ -1,12 +1,15 @@
+var kafka = require('kafka-node'),
+    Consumer = kafka.Consumer;
+const MyConsumer= require("./MyConsumer").MyConsumer;
+
 const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
-var kafka = require('kafka-node'),
-    Consumer = kafka.Consumer;
+
 
 let kafkaUrl = '192.168.0.144:9092';
 if (process.argv[2] === 'prod') {
-    kafkaUrl = 'http://kafka:9092';
+    kafkaUrl = 'kafka:9092';
 }
 
 
@@ -17,15 +20,16 @@ const teamCreatedClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
 const scoreClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
 const scoreEventClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
 
-var scoreEventConsumer = new Consumer(
-    scoreEventClient,
-    [{ topic: 'score-event', partition: 0 }],
-    {autoCommit: true}
-);
+var scoreEventConsumer = new MyConsumer(kafkaUrl, 'score-event', io, 'score-event');
+// var scoreEventConsumer = new Consumer(
+//     scoreEventClient,
+//     [{ topic: 'score-event', partition: 0 }],
+//     {autoCommit: true}
+// );
 
-scoreEventConsumer.on('message', function (message) {
-    io.emit('score-event',  JSON.parse(message.value));
-});
+// scoreEventConsumer.on('message', function (message) {
+//     io.emit('score-event',  JSON.parse(message.value));
+// });
 
 var scoreConsumer = new Consumer(
     scoreClient,
