@@ -1,3 +1,4 @@
+"use strict";
 var kafka = require('kafka-node'),
     Consumer = kafka.Consumer;
 const MyConsumer= require("./MyConsumer").MyConsumer;
@@ -12,77 +13,19 @@ if (process.argv[2] === 'prod') {
     kafkaUrl = 'kafka:9092';
 }
 
+var ioConsumers = [];
 
-const removeUserFromLobbyClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
-const joinLobbyClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
-const startGameClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
-const teamCreatedClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
-const scoreClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
-const scoreEventClient = new kafka.KafkaClient({kafkaHost: kafkaUrl});
+const consumers = [
+    {topic: 'score-event', socket: 'score-event'},
+    {topic: 'score', socket: 'score'},
+    {topic: 'team-created', socket: 'team-created'},
+    {topic: 'remove-user-from-lobby', socket: 'remove-user-from-lobby'},
+    {topic: 'join-lobby', socket: 'join-lobby'},
+    {topic: 'start-game-lobby', socket: 'start-game-lobby'}
+];
 
-var scoreEventConsumer = new MyConsumer(kafkaUrl, 'score-event', io, 'score-event');
-// var scoreEventConsumer = new Consumer(
-//     scoreEventClient,
-//     [{ topic: 'score-event', partition: 0 }],
-//     {autoCommit: true}
-// );
-
-// scoreEventConsumer.on('message', function (message) {
-//     io.emit('score-event',  JSON.parse(message.value));
-// });
-
-var scoreConsumer = new Consumer(
-    scoreClient,
-    [{ topic: 'score', partition: 0 }],
-    {autoCommit: true}
-);
-
-scoreConsumer.on('message', function (message) {
-    io.emit('score', {team: JSON.parse(message.value)});
-});
-
-var teamCreatedConsumer = new Consumer(
-    teamCreatedClient,
-    [{ topic: 'team-created', partition: 0 }],
-    {autoCommit: true}
-);
-
-teamCreatedConsumer.on('message', function(message) {
-    console.log(message);
-   io.emit('team-created', JSON.parse(message.value));
-});
-
-var removeUserFromLobbyConsumer = new Consumer(
-    removeUserFromLobbyClient,
-    [{ topic: 'remove-user-from-lobby', partition: 0 }],
-    {autoCommit: true}
-);
-
-removeUserFromLobbyConsumer.on('message', function (message) {
-    io.emit('remove-user-from-lobby', JSON.parse(message.value));
-});
-
-
-
-var joinLobbyConsumer = new Consumer(
-    joinLobbyClient,
-    [{ topic: 'join-lobby', partition: 0 }],
-    {autoCommit: true}
-);
-
-joinLobbyConsumer.on('message', function (message) {
-    io.emit('join-lobby', JSON.parse(message.value));
-});
-
-var startGameConsumer = new Consumer(
-    startGameClient,
-    [{topic: 'start-game-lobby', partition: 0}],
-    {autoCommit: true}
-);
-
-startGameConsumer.on('message', function (message) {
-    console.log(message);
-   io.emit('start-game-lobby', JSON.parse(message.value));
+consumers.forEach(c => {
+    ioConsumers.push({id: c.topic + '->' + c.socket, consumer: new MyConsumer(kafkaUrl, c.topic, io, c.socket)});
 });
 
 io.on('connection', function(socket){
@@ -98,11 +41,6 @@ io.on('connection', function(socket){
     socket.on('assign-team-to-users', data => {
         socket.broadcast.emit('assign-team-to-users-broadcast', data);
     });
-});
-
-
-joinLobbyConsumer.on('error', function (err) {
-    console.log('Score consumer error: ', err);
 });
 
 app.get('/', function(req, res){

@@ -1,12 +1,9 @@
+"use strict";
 var kafka = require('kafka-node'),
-    Consumer = kafka.Consumer;
-Client = kafka.KafkaClient;
+    Consumer = kafka.Consumer,
+    Client = kafka.KafkaClient;
 
 class MyConsumer {
-    consumer;
-    io;
-    socket;
-
     constructor(host, topic, io, socket) {
         this.io = io;
         this.socket = socket;
@@ -24,6 +21,7 @@ class MyConsumer {
             self.io.emit(self.socket,  JSON.parse(message.value));
         });
         this.consumer.on('error', function (err) {
+            if (err)
             console.log('Consumer error: ', err);
         });
     }
