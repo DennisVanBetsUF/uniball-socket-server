@@ -9,9 +9,13 @@ const io = require('socket.io')(http);
 
 
 let kafkaUrl = '192.168.0.144:9092';
+let kafkaConnectDelay = 0;
 if (process.argv[2] === 'prod') {
     kafkaUrl = 'kafka:9092';
+    kafkaConnectDelay = 15000;
 }
+
+setTimeout(() => console.log('waiting for kafka...'), kafkaConnectDelay);
 
 var ioConsumers = [];
 
