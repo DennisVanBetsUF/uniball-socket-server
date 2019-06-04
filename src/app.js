@@ -12,10 +12,8 @@ let kafkaUrl = '192.168.0.144:9092';
 let kafkaConnectDelay = 0;
 if (process.argv[2] === 'prod') {
     kafkaUrl = 'kafka:9092';
-    kafkaConnectDelay = 15000;
+    kafkaConnectDelay = 30000;
 }
-
-setTimeout(() => console.log('waiting for kafka...'), kafkaConnectDelay);
 
 var ioConsumers = [];
 
@@ -27,9 +25,13 @@ const consumers = [
     {topic: 'join-lobby', socket: 'join-lobby'},
     {topic: 'start-game-lobby', socket: 'start-game-lobby'}
 ];
-
-consumers.forEach(c => {
-    ioConsumers.push({id: c.topic + '->' + c.socket, consumer: new MyConsumer(kafkaUrl, c.topic, io, c.socket)});
+console.log('waiting for kafka...');
+setTimeout(() => {
+    console.log("Connecting to consumers...");
+    consumers.forEach(c => {
+        ioConsumers.push({id: c.topic + '->' + c.socket, consumer: new MyConsumer(kafkaUrl, c.topic, io, c.socket)});
+        console.log('Created consumer: ', ioConsumers[ioConsumers.length-1].id);
+    }, kafkaConnectDelay);
 });
 
 io.on('connection', function(socket){

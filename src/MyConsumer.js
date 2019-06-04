@@ -9,26 +9,46 @@ class MyConsumer {
     constructor(host, topic, io, socket) {
         this.io = io;
         this.socket = socket;
-        this.consumer = this.createClient();
         this.host = host;
-        this.initEvents();
+        this.topic = topic;
+        this.client = this.createClient();
+        this.consumer = this.createConsumer();
     }
 
     createClient() {
-        return new Consumer(
-            new kafka.KafkaClient({
-                kafkaHost: this.host,
-                connectRetryOptions: {
-                    retries: 5,
-                    factor: 3,
-                    minTimeout: 1 * 1000,
-                    maxTimeout: 60 * 1000,
-                    randomize: true
-                }
-            }),
-            [{topic: this.topic, partition: 0}],
-            {autoCommit: true});
+        return new Client({
+            kafkaHost: this.host,
+            connectRetryOptions: {
+                retries: 5,
+                factor: 3,
+                minTimeout: 10 * 1000,
+                maxTimeout: 60 * 1000,
+                randomize: true
+            }
+        });
     }
+
+    createConsumer() {
+        let self = this;
+        this.client.topicExists([this.topic], error => {
+            if (!error) {
+                this.consumer = new Consumer(
+                    this.client,
+                    [{topic: self.topic, partition: 0}],
+                    {autoCommit: true});
+                self.initEvents();
+            } else {
+                console.log("topic not found", error);
+                setTimeout(() => {
+                    console.log("Recreating consumer...");
+                    self.createConsumer();
+                }, 3000);
+            }
+        })
+
+    }
+
+
 
     initEvents() {
         let self = this;
