@@ -42,7 +42,7 @@ class MyConsumer {
                 setTimeout(() => {
                     console.log("Recreating consumer...");
                     self.createConsumer();
-                }, 3000);
+                }, 30000);
             }
         })
 
@@ -53,6 +53,7 @@ class MyConsumer {
     initEvents() {
         let self = this;
         this.consumer.on('message', function (message) {
+            console.log('posting on socket: ' + self.socket + ' \n message: ' + message);
             self.io.emit(self.socket, JSON.parse(message.value));
         });
         this.consumer.on('error', function (err) {
