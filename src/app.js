@@ -1,12 +1,9 @@
 "use strict";
-var kafka = require('kafka-node'),
-    Consumer = kafka.Consumer;
 const MyConsumer= require("./MyConsumer").MyConsumer;
 
 const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
-
 
 let kafkaUrl = '192.168.0.144:9092';
 let kafkaConnectDelay = 0;

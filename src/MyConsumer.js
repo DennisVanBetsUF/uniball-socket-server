@@ -3,7 +3,6 @@
 var kafka = require('kafka-node'),
     Consumer = kafka.Consumer,
     Client = kafka.KafkaClient;
-var TopicsNotExistError = require('kafka-node').TopicsNotExistError;
 
 class MyConsumer {
     constructor(host, topic, io, socket) {
@@ -38,16 +37,14 @@ class MyConsumer {
                     {autoCommit: true});
                 self.initEvents();
             } else {
-                console.log("topic not found", error);
+                console.log(error);
                 setTimeout(() => {
-                    console.log("Recreating consumer...");
+                    console.log("Trying to recreating consumer for topic: " + self.topic);
                     self.createConsumer();
                 }, 30000);
             }
         })
-
     }
-
 
 
     initEvents() {
