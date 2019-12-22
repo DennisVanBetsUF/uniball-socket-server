@@ -20,16 +20,18 @@ const consumers = [
     {topic: 'team-created', socket: 'team-created'},
     {topic: 'remove-user-from-lobby', socket: 'remove-user-from-lobby'},
     {topic: 'join-lobby', socket: 'join-lobby'},
-    {topic: 'start-game-lobby', socket: 'start-game-lobby'}
+    {topic: 'start-game-lobby', socket: 'start-game-lobby'},
+    {topic: 'create-matchke-event', socket: 'create-matchke-event', withOffsetFetch: true}
 ];
 console.log('waiting for kafka...');
+
 setTimeout(() => {
     console.log("Connecting to consumers...");
     consumers.forEach(c => {
-        ioConsumers.push({id: c.topic + '->' + c.socket, consumer: new MyConsumer(kafkaUrl, c.topic, io, c.socket)});
+        ioConsumers.push({id: c.topic + '->' + c.socket, consumer: new MyConsumer(kafkaUrl, c.topic, io, c.socket, c.withOffsetFetch ? c.withOffsetFetch: false)});
         console.log('Created consumer: ', ioConsumers[ioConsumers.length-1].id);
-    }, kafkaConnectDelay);
-});
+    });
+}, kafkaConnectDelay);
 
 io.on('connection', function(socket){
     socket.on('user-selected-team', data => {

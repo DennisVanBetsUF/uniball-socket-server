@@ -2,15 +2,19 @@
 
 var kafka = require('kafka-node'),
     Consumer = kafka.Consumer,
-    Client = kafka.KafkaClient;
+    Client = kafka.KafkaClient,
+    Offset = kafka.Offset;
 
 class MyConsumer {
-    constructor(host, topic, io, socket) {
+    constructor(host, topic, io, socket, withFirstOffsetFetch = false) {
         this.io = io;
         this.socket = socket;
         this.host = host;
         this.topic = topic;
         this.client = this.createClient();
+        if (withFirstOffsetFetch === true) {
+            this.fetchOffset();
+        }
         this.consumer = this.createConsumer();
     }
 
@@ -34,7 +38,7 @@ class MyConsumer {
                 this.consumer = new Consumer(
                     this.client,
                     [{topic: self.topic, partition: 0}],
-                    {autoCommit: true});
+                    {autoCommit: true, fromOffset: true});
                 self.initEvents();
             } else {
                 console.log(error);
@@ -55,6 +59,18 @@ class MyConsumer {
         });
         this.consumer.on('error', function (err) {
             console.log('Consumer error: ', err);
+        });
+    }
+
+    fetchOffset() {
+        let self = this;
+        let offset = new Offset(this.client);
+        offset.fetch([
+            {topic: this.topic, partition: 0, time: -1, maxNum: 1} //fetch latest available (time: -1)
+            ], (error, data) => {
+                self.consumer.
+                console.log('fetching offset fot topic: ', self.topic, error, data);
+                offset.get()
         });
     }
 }
