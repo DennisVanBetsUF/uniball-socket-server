@@ -13,9 +13,10 @@ class MyConsumer {
         this.topic = topic;
         this.client = this.createClient();
         if (withFirstOffsetFetch === true) {
-            this.fetchOffset();
+            this.createConsumerWithLastOffset();
+        } else {
+            this.consumer = this.createConsumer(null);
         }
-        this.consumer = this.createConsumer();
     }
 
     createClient() {
@@ -31,14 +32,14 @@ class MyConsumer {
         });
     }
 
-    createConsumer() {
+    createConsumer(offset) {
         let self = this;
         this.client.topicExists([this.topic], error => {
             if (!error) {
                 this.consumer = new Consumer(
                     this.client,
-                    [{topic: self.topic, partition: 0}],
-                    {autoCommit: true, fromOffset: true});
+                    [{topic: self.topic, partition: 0, offset: offset !== null ? offset - 1 : null}],
+                    {autoCommit: true, fromOffset: offset !== null});
                 self.initEvents();
             } else {
                 console.log(error);
@@ -54,23 +55,25 @@ class MyConsumer {
     initEvents() {
         let self = this;
         this.consumer.on('message', function (message) {
-            console.log('posting on socket: ' + self.socket + ' \n message: ' + message);
-            self.io.emit(self.socket, JSON.parse(message.value));
+            console.log('trying to post on socket: ' + self.socket + ' \n message: ' + message);
+            try {
+                self.io.emit(self.socket, JSON.parse(message.value));
+            } catch (e) {
+                console.log("Could not parse message.value: ", message);
+            }
         });
         this.consumer.on('error', function (err) {
             console.log('Consumer error: ', err);
         });
     }
 
-    fetchOffset() {
+    createConsumerWithLastOffset() {
         let self = this;
         let offset = new Offset(this.client);
-        offset.fetch([
-            {topic: this.topic, partition: 0, time: -1, maxNum: 1} //fetch latest available (time: -1)
-            ], (error, data) => {
-                self.consumer.
-                console.log('fetching offset fot topic: ', self.topic, error, data);
-                offset.get()
+        offset.fetchLatestOffsets([this.topic], (error, offsets) => {
+                if (error) return;
+                let offset = offsets[self.topic][0]; //[0] = partition
+                self.createConsumer(offset ? offset : 0);
         });
     }
 }

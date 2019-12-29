@@ -18,17 +18,16 @@ const consumers = [
     {topic: 'score-event', socket: 'score-event'},
     {topic: 'score', socket: 'score'},
     {topic: 'team-created', socket: 'team-created'},
-    {topic: 'remove-user-from-lobby', socket: 'remove-user-from-lobby'},
     {topic: 'join-lobby', socket: 'join-lobby'},
-    {topic: 'start-game-lobby', socket: 'start-game-lobby'},
-    {topic: 'create-matchke-event', socket: 'create-matchke-event', withOffsetFetch: true}
+    {topic: 'remove-user-from-lobby', socket: 'remove-user-from-lobby'},
+    {topic: 'start-game-lobby', socket: 'start-game-lobby'}
 ];
 console.log('waiting for kafka...');
 
 setTimeout(() => {
     console.log("Connecting to consumers...");
     consumers.forEach(c => {
-        ioConsumers.push({id: c.topic + '->' + c.socket, consumer: new MyConsumer(kafkaUrl, c.topic, io, c.socket, c.withOffsetFetch ? c.withOffsetFetch: false)});
+        ioConsumers.push({id: c.topic + '->' + c.socket, consumer: new MyConsumer(kafkaUrl, c.topic, io, c.socket, false)});
         console.log('Created consumer: ', ioConsumers[ioConsumers.length-1].id);
     });
 }, kafkaConnectDelay);
@@ -46,9 +45,12 @@ io.on('connection', function(socket){
     socket.on('assign-team-to-users', data => {
         socket.broadcast.emit('assign-team-to-users-broadcast', data);
     });
+    socket.on('subscribe-to-game-created-events', data => {
+       let startGameOffsetConsumer = new MyConsumer(kafkaUrl, 'start-game-lobby', socket, 'subscribe-to-game-created-events', true);
+    });
 });
 
-app.get('/', function(req, res){
+app.get('/', function(req, res) {
     res.send('<h1>Message server</h1>');
 });
 
