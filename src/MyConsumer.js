@@ -2,16 +2,21 @@
 
 var kafka = require('kafka-node'),
     Consumer = kafka.Consumer,
-    Client = kafka.KafkaClient;
+    Client = kafka.KafkaClient,
+    Offset = kafka.Offset;
 
 class MyConsumer {
-    constructor(host, topic, io, socket) {
+    constructor(host, topic, io, socket, withFirstOffsetFetch = false) {
         this.io = io;
         this.socket = socket;
         this.host = host;
         this.topic = topic;
         this.client = this.createClient();
-        this.consumer = this.createConsumer();
+        if (withFirstOffsetFetch === true) {
+            this.createConsumerWithLastOffset();
+        } else {
+            this.consumer = this.createConsumer(null);
+        }
     }
 
     createClient() {
@@ -27,14 +32,14 @@ class MyConsumer {
         });
     }
 
-    createConsumer() {
+    createConsumer(offset) {
         let self = this;
         this.client.topicExists([this.topic], error => {
             if (!error) {
                 this.consumer = new Consumer(
                     this.client,
-                    [{topic: self.topic, partition: 0}],
-                    {autoCommit: true});
+                    [{topic: self.topic, partition: 0, offset: offset !== null ? offset - 1 : null}],
+                    {autoCommit: true, fromOffset: offset !== null});
                 self.initEvents();
             } else {
                 console.log(error);
@@ -50,11 +55,25 @@ class MyConsumer {
     initEvents() {
         let self = this;
         this.consumer.on('message', function (message) {
-            console.log('posting on socket: ' + self.socket + ' \n message: ' + message);
-            self.io.emit(self.socket, JSON.parse(message.value));
+            console.log('trying to post on socket: ' + self.socket + ' \n message: ' + message);
+            try {
+                self.io.emit(self.socket, JSON.parse(message.value));
+            } catch (e) {
+                console.log("Could not parse message.value: ", message);
+            }
         });
         this.consumer.on('error', function (err) {
             console.log('Consumer error: ', err);
+        });
+    }
+
+    createConsumerWithLastOffset() {
+        let self = this;
+        let offset = new Offset(this.client);
+        offset.fetchLatestOffsets([this.topic], (error, offsets) => {
+                if (error) return;
+                let offset = offsets[self.topic][0]; //[0] = partition
+                self.createConsumer(offset ? offset : 0);
         });
     }
 }
